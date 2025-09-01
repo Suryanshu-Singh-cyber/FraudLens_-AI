@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FraudLens AI</title>
+
+  <!-- Tailwind + Chart.js + EmailJS UMD + AOS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+  <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+  <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+  <style>
+    html { scroll-behavior: smooth; }
+    .gradient-bg { background: radial-gradient(circle at 10% 0%, #0f172a 0%, #1e293b 40%, #0f172a 100%); }
+    .card { background: #111827; border: 1px solid rgba(255,255,255,0.06); border-radius: 1rem; padding: 1.25rem; }
+    .nav-blur { backdrop-filter: blur(6px); background: rgba(2,6,23,0.35); }
+
+    /* Particles */
+    #particles { position:absolute; inset:0; z-index:0; overflow:hidden; }
+    .particle { position:absolute; border-radius:50%; animation:float linear infinite; }
+    @keyframes float {
+      0%   { transform: translateY(100vh) scale(0.5); opacity:.25; }
+      100% { transform: translateY(-10vh) scale(1.15); opacity:0; }
+    }
+
+    /* Table */
+    table thead th { text-align:left; padding: .5rem; color:#cbd5e1; font-weight:600; }
+    table tbody td { padding: .5rem; color:#e5e7eb; border-top: 1px solid rgba(255,255,255,0.05); }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* OTP Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(2,6,23,0.6); display: none; z-index: 60;
+      align-items: center; justify-content: center; padding: 1.5rem;
+      backdrop-filter: blur(4px);
+    }
+    .modal-card {
+      width: 100%; max-width: 540px; border-radius: 1rem; padding: 1.25rem; background: linear-gradient(180deg,#0b1220,#0f1724);
+      border: 1px solid rgba(255,255,255,0.06); box-shadow: 0 10px 40px rgba(2,6,23,0.6);
+      transform: translateY(24px) scale(.98); opacity: 0; transition: transform .32s cubic-bezier(.2,.9,.3,1), opacity .32s ease;
+    }
+    .modal-backdrop.show { display:flex; }
+    .modal-backdrop.show .modal-card { transform: translateY(0) scale(1); opacity: 1; }
+
+    /* glowing input */
+    .glow-input { box-shadow: 0 0 0 0 rgba(56,189,248,0); transition: box-shadow .28s ease, transform .12s ease; }
+    .glow-input:focus { outline: none; transform: translateY(-2px); box-shadow: 0 6px 36px rgba(59,130,246,0.12), 0 0 18px rgba(59,130,246,0.15); }
+
+    /* small OTP digits spacing */
+    .otp-digits { letter-spacing: 10px; font-weight: 700; }
+
+    /* dashboard sidebar */
+    .sidebar-btn { display:block; width:100%; text-align:left; padding:.6rem .75rem; border-radius:.6rem; color:#d1d5db; }
+    .sidebar-btn:hover { color: #60a5fa; background: rgba(255,255,255,0.02); }
+
+    /* risk pill */
+    .risk-pill { padding:.25rem .5rem; border-radius:.5rem; font-weight:600; font-size:.85rem; }
+
+    /* responsive tweaks */
+    @media (max-width: 768px) {
+      .sidebar-hidden-md { display:none; }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white font-sans relative">
+
+  <!-- NAVBAR -->
+  <nav class="nav-blur p-4 md:p-6 fixed top-0 w-full z-50 flex justify-between items-center">
+    <a href="#" class="flex items-center gap-3" id="homeBrand">
+      <span class="text-2xl" aria-label="home">🛡️</span>
+      <span class="text-xl md:text-2xl font-extrabold text-blue-400">FraudLens AI</span>
+    </a>
+    <div class="hidden md:flex items-center gap-6">
+      <a href="#usp" class="hover:text-blue-400 transition public-link" data-target="#usp">Features</a>
+      <a href="#advantage" class="hover:text-blue-400 transition public-link" data-target="#advantage">Advantage</a>
+      <a href="#cta" class="hover:text-blue-400 transition public-link" data-target="#cta">Join</a>
+      <button id="homeBtn" class="px-4 py-2 rounded bg-gray-800 hover:bg-gray-700">Home</button>
+      <button onclick="showPage('login')" class="px-5 py-2 rounded bg-blue-600 hover:bg-blue-700">Login</button>
+    </div>
+    <div class="md:hidden flex items-center gap-2">
+      <button id="homeBtnMobile" class="px-3 py-2 rounded bg-gray-800 hover:bg-gray-700" aria-label="home">🏠</button>
+      <button class="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700" onclick="showPage('login')">Login</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section id="landing" class="relative gradient-bg min-h-screen flex flex-col items-center justify-center text-center px-6 pt-24 overflow-hidden">
+    <div id="particles" aria-hidden="true"></div>
+    <div class="absolute inset-0">
+      <img src="https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?auto=format&fit=crop&w=1600&q=80"
+           class="w-full h-full object-cover opacity-10" alt="Cyber Background">
+    </div>
+
+    <div class="relative z-10 max-w-5xl">
+      <h1 class="text-5xl md:text-6xl font-extrabold mb-6 text-blue-400 animate-pulse" data-aos="fade-up">
+        FraudLens AI
+      </h1>
+      <p class="text-xl md:text-2xl text-gray-200 mb-10 leading-relaxed" data-aos="fade-up" data-aos-delay="150">
+        An <span class="text-red-400 font-bold">AI-powered National Cyber Fraud Platform</span>  
+        bridging <b>Banks</b> & <b>Police Agencies</b> to detect, investigate, and stop fraud 🚨.
+      </p>
+      <div class="flex flex-wrap justify-center gap-4" data-aos="fade-up" data-aos-delay="300">
+        <a href="#usp" class="px-7 py-3 text-lg bg-blue-600 hover:bg-blue-700 rounded-lg shadow-lg transform hover:scale-105 transition public-link" data-target="#usp">
+          Explore Features
+        </a>
+        <a href="#advantage" class="px-7 py-3 text-lg bg-gray-700 hover:bg-gray-600 rounded-lg shadow-lg transform hover:scale-105 transition public-link" data-target="#advantage">
+          Why Us?
+        </a>
+      </div>
+      <div class="mt-12" data-aos="fade-up" data-aos-delay="500">
+        <img src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" 
+             class="mx-auto w-28 md:w-40 drop-shadow-lg animate-bounce" alt="Cyber Shield Icon">
+      </div>
+    </div>
+
+    <div class="absolute bottom-0 w-full h-24 bg-gradient-to-t from-gray-900 to-transparent"></div>
+  </section>
+
+  <!-- FEATURES / USP -->
+  <section id="usp" class="p-10 md:p-20 bg-gray-900">
+    <h2 class="text-4xl font-bold text-center mb-12" data-aos="zoom-in">🔑 Platform Capabilities</h2>
+    <div class="grid md:grid-cols-4 gap-6 md:gap-10 max-w-6xl mx-auto">
+      <div class="card hover:shadow-2xl transform hover:scale-105 transition" data-aos="fade-up">
+        <img src="https://cdn-icons-png.flaticon.com/512/3135/3135715.png" class="w-14 mb-4" alt="Fraud Detection">
+        <h3 class="text-xl font-semibold mb-2">⚡ Real-time Fraud Detection</h3>
+        <p class="text-gray-400">AI flags suspicious transactions in milliseconds with clear risk scores.</p>
+      </div>
+      <div class="card hover:shadow-2xl transform hover:scale-105 transition" data-aos="fade-up" data-aos-delay="100">
+        <img src="https://cdn-icons-png.flaticon.com/512/1995/1995525.png" class="w-14 mb-4" alt="Police Dashboard">
+        <h3 class="text-xl font-semibold mb-2">👮 Police Dashboard</h3>
+        <p class="text-gray-400">Case queue, officer notes, chain-of-custody & legal-ready PDF reports.</p>
+      </div>
+      <div class="card hover:shadow-2xl transform hover:scale-105 transition" data-aos="fade-up" data-aos-delay="200">
+        <img src="https://cdn-icons-png.flaticon.com/512/891/891462.png" class="w-14 mb-4" alt="Network Graph">
+        <h3 class="text-xl font-semibold mb-2">🔗 Fraud Network Graph</h3>
+        <p class="text-gray-400">See connections between accounts; uncover mule rings & hubs.</p>
+      </div>
+      <div class="card hover:shadow-2xl transform hover:scale-105 transition" data-aos="fade-up" data-aos-delay="300">
+        <img src="https://cdn-icons-png.flaticon.com/512/854/854878.png" class="w-14 mb-4" alt="Heatmap">
+        <h3 class="text-xl font-semibold mb-2">🗺️ Geo-Time Heatmap</h3>
+        <p class="text-gray-400">Track hotspots by district & time to prioritize field operations.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ADVANTAGE -->
+  <section id="advantage" class="p-10 md:p-20 gradient-bg text-center relative overflow-hidden">
+    <h2 class="text-4xl font-bold mb-6" data-aos="fade-up">🌟 Our Unique Advantage</h2>
+    <p class="text-lg text-gray-200 max-w-3xl mx-auto mb-10" data-aos="fade-up" data-aos-delay="150">
+      Built jointly for <b>Banks</b> and <b>Law Enforcement</b>: real-time detection for prevention,  
+      plus investigative tooling for action. Evidence, not just alerts.
+    </p>
+    <div class="flex justify-center gap-6 md:gap-10 flex-wrap">
+      <div class="card w-80 hover:scale-105 transition" data-aos="flip-left">
+        <h4 class="text-xl font-semibold mb-2">📜 Legal-Ready Reports</h4>
+        <p class="text-gray-400">One-click PDF with facts, indicators, timelines & officer attestation.</p>
+      </div>
+      <div class="card w-80 hover:scale-105 transition" data-aos="flip-left" data-aos-delay="150">
+        <h4 class="text-xl font-semibold mb-2">📡 Hotspot Intelligence</h4>
+        <p class="text-gray-400">District-level risk to allocate patrols and cyber task forces.</p>
+      </div>
+      <div class="card w-80 hover:scale-105 transition" data-aos="flip-left" data-aos-delay="300">
+        <h4 class="text-xl font-semibold mb-2">🔍 Explainable AI</h4>
+        <p class="text-gray-400">See why a transaction was flagged — transparent & auditable.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section id="cta" class="p-16 md:p-20 gradient-bg text-center">
+    <h2 class="text-5xl font-extrabold mb-6 bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 text-transparent bg-clip-text animate-pulse" data-aos="fade-up">
+      Join the FraudLens Mission
+    </h2>
+    <p class="text-xl text-gray-200 max-w-2xl mx-auto mb-10" data-aos="fade-up" data-aos-delay="150">
+      Protecting citizens, safeguarding banks, and empowering law enforcement.  
+      Together, we can stop fraud before it spreads. 🚨
+    </p>
+    <div data-aos="fade-up" data-aos-delay="300">
+      <a href="#login" onclick="showPage('login')" 
+         class="px-12 py-4 text-xl font-bold rounded-lg shadow-lg 
+                bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 
+                hover:from-blue-500 hover:via-purple-500 hover:to-pink-500 
+                text-white animate-pulse transform hover:scale-110 transition">
+        🚀 Join Now
+      </a>
+    </div>
+  </section>
+
+  <!-- ================== APP SECTIONS (Login / Bank / Police) ================== -->
+
+  <!-- LOGIN -->
+  <section id="login" class="hidden min-h-screen flex items-center justify-center bg-gradient-to-r from-gray-900 via-blue-950 to-gray-900 relative">
+    <div class="absolute inset-0 opacity-10">
+      <img src="https://www.transparenttextures.com/patterns/cubes.png" class="w-full h-full object-cover" alt="" />
+    </div>
+
+    <div class="relative z-10 w-full max-w-md bg-gray-800/80 backdrop-blur-md rounded-2xl shadow-2xl p-8 text-center">
+      <h2 class="text-3xl font-bold text-blue-400 mb-2">🔐 Secure Login</h2>
+      <p class="text-gray-300 mb-6">Sign in with your email & password</p>
+
+      <input type="email" id="email" placeholder="Email" 
+        class="w-full p-3 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3">
+
+      <input type="password" id="password" placeholder="Password" 
+        class="w-full p-3 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
+
+      <div class="flex gap-3 justify-center mb-4">
+        <button onclick="signup()" class="px-5 py-2 bg-green-600 hover:bg-green-700 rounded-lg">Sign Up</button>
+        <button onclick="loginUser()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg">Login</button>
+      </div>
+
+      <button onclick="resetPassword()" class="text-sm text-blue-400 hover:underline">Forgot Password?</button>
+
+      <p id="loginMessage" class="mt-4 text-sm text-red-400"></p>
+
+      <div class="mt-6">
+        <label class="block mb-2 text-gray-400">Select Role:</label>
+        <select id="role" class="w-full p-2 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="bank">🏦 Bank User</option>
+          <option value="police">👮 Police Officer</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+<!-- ================= BANK DASHBOARD ================= -->
+<div id="bank-dashboard" class="min-h-screen pt-20">
+
+  <!-- Navbar -->
+  <header class="flex justify-between items-center bg-gray-800 shadow px-6 py-4 fixed w-full top-0 z-40">
+    <h1 class="text-2xl font-bold text-blue-400">FraudLens AI – Bank Officer</h1>
+    <div class="flex items-center gap-3">
+      <button id="btnExportCSV" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg hidden sm:inline">⬇ Export CSV</button>
+      <button id="btnNotifyPolice" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg">🚨 Notify Police</button>
+      <button onclick="window.signOut && window.signOut()" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg">Sign out</button>
+    </div>
+  </header>
+
+  <div class="flex mt-16">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-gray-800 shadow-lg p-6 hidden md:block">
+      <nav class="space-y-4">
+        <button onclick="renderBankView('dashboard')" class="sidebar-btn w-full text-left px-2 py-1 hover:bg-blue-700 rounded">🏦 Dashboard</button>
+        <button onclick="renderBankView('alerts')" class="sidebar-btn w-full text-left px-2 py-1 hover:bg-blue-700 rounded">🚨 Alerts</button>
+        <button onclick="renderBankView('analytics')" class="sidebar-btn w-full text-left px-2 py-1 hover:bg-blue-700 rounded">📊 Analytics</button>
+        <button onclick="renderBankView('settings')" class="sidebar-btn w-full text-left px-2 py-1 hover:bg-blue-700 rounded">⚙ Settings</button>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 space-y-6">
+
+      <!-- KPI CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-xl transition">
+          <h3 class="text-sm text-gray-400">Total Transactions</h3>
+          <p id="kpi-total" class="text-2xl font-bold text-blue-400">0</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-xl transition">
+          <h3 class="text-sm text-gray-400">High Risk</h3>
+          <p id="kpi-highrisk" class="text-2xl font-bold text-red-500">0</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-xl transition">
+          <h3 class="text-sm text-gray-400">Avg Amount</h3>
+          <p id="kpi-avg" class="text-2xl font-bold text-green-400">₹0</p>
+        </div>
+        <div class="bg-gray-800 p-6 rounded-xl shadow hover:shadow-xl transition">
+          <h3 class="text-sm text-gray-400">Alerts Sent</h3>
+          <p id="kpi-alerts" class="text-2xl font-bold text-yellow-400">0</p>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="bg-gray-800 p-4 rounded-xl flex flex-wrap gap-4 items-center">
+        <input id="filterSearch" type="text" placeholder="Search TXN ID / IP / Device" class="p-2 rounded bg-gray-700 text-gray-200">
+        <select id="filterRisk" class="p-2 rounded bg-gray-700 text-gray-200">
+          <option value="all">All Risks</option>
+          <option value="high">High Risk (>=80)</option>
+          <option value="medium">Medium Risk (50-80)</option>
+          <option value="low">Low Risk (&lt;50)</option>
+        </select>
+        <select id="filterChannel" class="p-2 rounded bg-gray-700 text-gray-200">
+          <option value="all">All Channels</option>
+          <option value="ATM">ATM</option>
+          <option value="UPI">UPI</option>
+          <option value="NETBANKING">NetBanking</option>
+          <option value="CARD">Card Swipe</option>
+        </select>
+        <input id="filterDate" type="date" class="p-2 rounded bg-gray-700 text-gray-200">
+        <button id="applyFiltersBtn" class="bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 text-white">Apply Filters</button>
+      </div>
+
+      <!-- Dashboard Container (Dark Blue) -->
+      <div class="max-w-6xl mx-auto mt-6 p-6 bg-blue-900 rounded-2xl shadow-lg text-white">
+        <h2 class="text-xl font-bold mb-4">🔍 Transactions Monitor</h2>
+
+        <!-- ================== New Transaction Form ================== -->
+        <div id="newTransaction" class="p-4 mb-4 bg-blue-800 text-white rounded-xl shadow">
+          <h3 class="text-lg font-bold mb-2">Add New Transaction</h3>
+
+          <label class="block mb-1">Txn ID:</label>
+          <input type="text" id="newTxID" placeholder="TXN1234" class="w-full mb-2 p-2 rounded text-black">
+
+          <label class="block mb-1">Amount (₹):</label>
+          <input type="number" id="newTxAmount" placeholder="50000" class="w-full mb-2 p-2 rounded text-black">
+
+          <label class="block mb-1">Time (HH:MM):</label>
+          <input type="time" id="newTxTime" class="w-full mb-2 p-2 rounded text-black">
+
+          <label class="block mb-1">Receiver Type:</label>
+          <select id="newTxReceiver" class="w-full mb-2 p-2 rounded text-black">
+            <option value="Known">Known</option>
+            <option value="New">New</option>
+          </select>
+
+          <button onclick="addTransactionFromForm()" class="px-4 py-2 bg-white text-blue-900 rounded font-bold hover:bg-gray-200">
+            Check & Add
+          </button>
+        </div>
+
+        <!-- Transaction Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full border border-blue-700 rounded-lg overflow-hidden">
+            <thead class="bg-blue-800 text-gray-200">
+              <tr>
+                <th class="px-4 py-2">Txn ID</th>
+                <th class="px-4 py-2">Amount</th>
+                <th class="px-4 py-2">Time</th>
+                <th class="px-4 py-2">Receiver</th>
+                <th class="px-4 py-2">Status</th>
+                <th class="px-4 py-2">Action</th>
+              </tr>
+            </thead>
+            <tbody id="transactionTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Modal: Transaction Details -->
+      <div id="detailsModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center">
+        <div class="bg-white p-6 rounded-xl w-96 shadow-lg">
+          <h2 class="text-xl font-bold mb-4">Transaction Details</h2>
+          <div id="detailsContent" class="space-y-2 text-gray-700"></div>
+          <div class="flex justify-end mt-4">
+            <button id="closeDetails" class="bg-indigo-600 text-white px-4 py-2 rounded">Close</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTION PANEL -->
+      <div class="flex gap-4">
+        <button id="bulkSafeBtn" class="bg-gray-700 px-4 py-2 rounded-lg text-white hover:bg-gray-600">Mark Selected Safe</button>
+        <button id="exportCSV2" class="bg-green-600 px-4 py-2 rounded-lg text-white hover:bg-green-700">Export Visible CSV</button>
+      </div>
+
+      <!-- CHART AREA -->
+      <div id="chart-area" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+          <h4 class="text-md text-gray-200 mb-2">Risk Distribution</h4>
+          <canvas id="riskChart"></canvas>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl shadow">
+          <h4 class="text-md text-gray-200 mb-2">Transaction Volume (Demo)</h4>
+          <canvas id="trendChart"></canvas>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+  <!-- POLICE DASHBOARD -->
+<!-- ================= POLICE DASHBOARD ================= -->
+<section id="police" class="hidden p-10 md:p-16 bg-gray-900 min-h-screen text-white">
+
+  <!-- Header -->
+  <div class="flex justify-between items-center mb-6">
+    <h2 class="text-3xl font-bold text-blue-400">👮 Police Dashboard</h2>
+    <button onclick="window.signOut && window.signOut()" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded">Sign out</button>
+  </div>
+
+  <!-- Grid Layout -->
+  <div class="grid lg:grid-cols-3 gap-8">
+
+    <!-- LEFT: Case Queue -->
+    <div class="bg-gray-800 p-4 rounded-xl shadow-lg lg:col-span-2">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-xl font-semibold">Case Queue</h3>
+        <div class="flex gap-2">
+          <button class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm" onclick="clearCases()">Clear</button>
+          <button class="px-3 py-1 bg-green-600 hover:bg-green-700 rounded text-sm" onclick="exportCasesCSV()">Export</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-sm">
+          <thead class="bg-gray-700 text-gray-200 sticky top-0">
+            <tr>
+              <th class="px-2 py-1">ID</th>
+              <th class="px-2 py-1">Amount</th>
+              <th class="px-2 py-1">Location</th>
+              <th class="px-2 py-1">Risk</th>
+              <th class="px-2 py-1">Status</th>
+              <th class="px-2 py-1">Action</th>
+            </tr>
+          </thead>
+          <tbody id="caseTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- RIGHT: Case Details -->
+    <div class="bg-gray-800 p-4 rounded-xl shadow-lg">
+      <h3 class="text-xl font-semibold mb-3">Case Details</h3>
+      <div id="caseDetailsEmpty" class="text-gray-400">Select a case to view details.</div>
+      <div id="caseDetails" class="hidden space-y-3">
+        <div id="caseInfo" class="text-sm text-gray-200"></div>
+        <label class="block text-xs text-gray-400">Assign Officer</label>
+        <select id="assignOfficer" class="p-2 rounded bg-gray-900 w-full">
+          <option>Officer R. Singh</option>
+          <option>Officer A. Roy</option>
+          <option>Officer S. Mehta</option>
+        </select>
+        <label class="block text-xs text-gray-400">Notes</label>
+        <textarea id="caseNotes" class="w-full p-2 rounded bg-gray-900" rows="3"></textarea>
+        <div class="flex gap-2">
+          <button onclick="saveCaseNotes()" class="bg-blue-600 px-3 py-2 rounded hover:bg-blue-700">Save</button>
+          <button onclick="closeCaseDetails()" class="bg-gray-700 px-3 py-2 rounded hover:bg-gray-600">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Heatmap full width -->
+    <div class="bg-gray-800 p-4 rounded-xl shadow-lg lg:col-span-3 relative">
+      <h3 class="text-xl font-semibold mb-3">Geo-Time Heatmap (Demo)</h3>
+      
+      <!-- Map Container -->
+      <div id="policeHeatmap" class="w-full h-96 rounded"></div>
+      
+      <!-- Legend -->
+      <div id="heatmapLegend" class="absolute bottom-4 right-4 bg-gray-900 bg-opacity-90 p-3 rounded shadow-lg text-sm text-white">
+        <div class="flex items-center gap-2"><span class="w-4 h-4 bg-green-500 inline-block rounded"></span>Low Risk</div>
+        <div class="flex items-center gap-2"><span class="w-4 h-4 bg-orange-500 inline-block rounded"></span>Medium Risk</div>
+        <div class="flex items-center gap-2"><span class="w-4 h-4 bg-red-500 inline-block rounded"></span>High Risk</div>
+      </div>
+
+      <p class="text-gray-400 text-sm mt-2">Visualize hotspots to prioritize field operations.</p>
+    </div>
+  </div>
+</section>
+
+
+
+  <!-- OTP MODAL -->
+  <div id="otpModal" class="modal-backdrop" aria-hidden="true">
+    <div class="modal-card">
+      <div class="flex justify-between items-center mb-4">
+        <h4 class="text-lg font-semibold">Verify your email — OTP</h4>
+        <button onclick="hideOtpModal()" class="text-sm text-gray-400 hover:text-white" aria-label="Close">✕</button>
+      </div>
+      <p class="text-sm text-gray-300 mb-3">Enter the 6-digit code we sent to your email. Expires in 5 minutes.</p>
+
+      <input id="otpModalInput" type="text" maxlength="6" placeholder="●●●●●●"
+             class="w-full p-3 rounded bg-gray-900 text-white border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4 text-center tracking-widest text-xl glow-input otp-digits">
+
+      <div class="flex gap-3 justify-between">
+        <button id="modalVerifyBtn" class="flex-1 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg">Verify OTP</button>
+        <button id="modalResendBtn" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg">Resend</button>
+      </div>
+
+      <p id="modalOtpHint" class="mt-3 text-xs text-gray-400"></p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="p-6 bg-gray-800 text-center text-gray-400">
+    <p>© 2025 FraudLens AI — Built for National CyberShield Hackathon</p>
+    <p class="mt-2 text-sm">Powered by <span class="text-blue-400">AI + Police Intelligence</span></p>
+  </footer>
+  
+<!-- ================= Police Dashboard Script ================= -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+
+<script>
+  const policeCases = [
+    {id:"C1001", amount:50000, lat:28.7041, lng:77.1025, location:"Delhi", risk:"High", status:"Open"},
+    {id:"C1002", amount:15000, lat:19.0760, lng:72.8777, location:"Mumbai", risk:"Medium", status:"Pending"},
+    {id:"C1003", amount:7000, lat:12.9716, lng:77.5946, location:"Bangalore", risk:"Low", status:"Closed"},
+  ];
+
+  const caseTable = document.getElementById("caseTable");
+  function renderCases() {
+    caseTable.innerHTML = "";
+    policeCases.forEach((c, idx) => {
+      const row = document.createElement("tr");
+      row.className = "hover:bg-gray-700 transition cursor-pointer";
+      row.innerHTML = `
+        <td class="px-2 py-1">${c.id}</td>
+        <td class="px-2 py-1">₹${c.amount}</td>
+        <td class="px-2 py-1">${c.location}</td>
+        <td class="px-2 py-1">${c.risk}</td>
+        <td class="px-2 py-1">${c.status}</td>
+        <td class="px-2 py-1">
+          <button class="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-white text-xs" onclick="showCaseDetails(${idx})">View</button>
+        </td>
+      `;
+      caseTable.appendChild(row);
+    });
+  }
+  renderCases();
+
+  function showCaseDetails(idx) {
+    const caseData = policeCases[idx];
+    document.getElementById("caseDetailsEmpty").classList.add("hidden");
+    const details = document.getElementById("caseDetails");
+    details.classList.remove("hidden");
+
+    document.getElementById("caseInfo").innerHTML = `
+      <p><strong>ID:</strong> ${caseData.id}</p>
+      <p><strong>Amount:</strong> ₹${caseData.amount}</p>
+      <p><strong>Location:</strong> ${caseData.location}</p>
+      <p><strong>Risk:</strong> ${caseData.risk}</p>
+      <p><strong>Status:</strong> ${caseData.status}</p>
+    `;
+    document.getElementById("assignOfficer").value = "Officer R. Singh";
+    document.getElementById("caseNotes").value = "";
+  }
+
+  function closeCaseDetails() {
+    document.getElementById("caseDetails").classList.add("hidden");
+    document.getElementById("caseDetailsEmpty").classList.remove("hidden");
+  }
+
+  function saveCaseNotes() { alert("Case notes saved!"); }
+  function clearCases() { policeCases.length = 0; renderCases(); }
+  function exportCasesCSV() {
+    let csv = "ID,Amount,Location,Risk,Status\n";
+    policeCases.forEach(c => csv += `${c.id},${c.amount},${c.location},${c.risk},${c.status}\n`);
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cases.csv";
+    a.click();
+  }
+
+  // ================= Leaflet Heatmap =================
+  let map, heatLayer;
+  function initPoliceMap() {
+    const container = document.getElementById("policeHeatmap");
+    if (!container) return;
+
+    if (!map) {
+      map = L.map('policeHeatmap', {center:[20.5937,78.9629], zoom:5});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18}).addTo(map);
+    }
+    map.invalidateSize();
+
+    if (heatLayer) map.removeLayer(heatLayer);
+
+    const points = policeCases.map(c => {
+      const intensity = c.risk === "High" ? 1 : c.risk === "Medium" ? 0.6 : 0.3;
+      return [c.lat, c.lng, intensity];
+    });
+
+    heatLayer = L.heatLayer(points,{
+      radius:30,
+      blur:20,
+      maxZoom:17,
+      gradient:{0.3:'green',0.6:'orange',1:'red'}
+    }).addTo(map);
+  }
+
+  window.addEventListener('load', () => {
+    setTimeout(initPoliceMap, 300);
+  });
+</script>
+  <script type="module">
+    // ----------- Firebase imports & init -----------
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      sendPasswordResetEmail,
+      sendEmailVerification,
+      signOut as fbSignOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+
+    // EmailJS (global window.emailjs)
+    const EMAILJS = window.emailjs;
+    const EMAILJS_SERVICE_ID = "service_um49glp";
+    const EMAILJS_TEMPLATE_ID = "template_vxdpgiy";
+    const EMAILJS_PUBLIC_KEY = "l3qMvh_qyG6NP982d";
+    if (EMAILJS && EMAILJS.init) {
+      try { EMAILJS.init(EMAILJS_PUBLIC_KEY); } catch(e){ console.warn("EmailJS init:", e); }
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAZS22NBVwh9Jztdc0XDtcjvgAGJqQALiM",
+      authDomain: "rakshapay.firebaseapp.com",
+      projectId: "rakshapay",
+      storageBucket: "rakshapay.firebasestorage.app",
+      messagingSenderId: "187465438800",
+      appId: "1:187465438800:web:a0b4388b8525f3c1d66355"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // OTP state & UI
+    let currentOTP = null;
+    let otpExpiresAt = 0;
+    let resendAvailableAt = 0;
+    let pendingEmail = '';
+    let pendingRole = 'bank';
+
+    function showLoginMessage(text, color = '#fca5a5') {
+      const el = document.getElementById('loginMessage');
+      if (!el) return;
+      el.style.color = color;
+      el.textContent = text;
+    }
+
+    // Modal helpers
+    function showOtpModal() {
+      const modal = document.getElementById('otpModal');
+      modal.classList.add('show');
+      modal.ariaHidden = "false";
+      const input = document.getElementById('otpModalInput');
+      input.value = '';
+      requestAnimationFrame(() => input.focus());
+    }
+    function hideOtpModal() {
+      const modal = document.getElementById('otpModal');
+      modal.classList.remove('show');
+      modal.ariaHidden = "true";
+      document.getElementById('modalOtpHint').textContent = '';
+    }
+
+    // ---------------- AUTH: Signup / Login / Reset ----------------
+    window.signup = async function signup() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      if (!email || !password) { showLoginMessage('Please enter email and password.'); return; }
+      try {
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        await sendEmailVerification(userCred.user);
+        showLoginMessage('Signup successful! Verification email sent. Please verify and login.', '#86efac');
+      } catch (err) { showLoginMessage(err.message || 'Signup failed'); }
+    };
+
+    window.loginUser = async function loginUser() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      pendingRole = document.getElementById('role')?.value || 'bank';
+      if (!email || !password) { showLoginMessage('Please enter email and password.'); return; }
+
+      try {
+        const userCred = await signInWithEmailAndPassword(auth, email, password);
+        if (!userCred.user.emailVerified) {
+          const msg = document.getElementById('loginMessage');
+          msg.style.color = '#f59e0b';
+          msg.innerHTML = 'Email not verified. <button id="resendVerify" class="ml-2 underline">Resend verification</button>';
+          document.getElementById('resendVerify').addEventListener('click', async () => {
+            await sendEmailVerification(userCred.user);
+            showLoginMessage('Verification email resent. Check your inbox.', '#86efac');
+          });
+          return;
+        }
+
+        // start OTP - show modal immediately to remove perceived delay
+        pendingEmail = email;
+        currentOTP = generateOTP();
+        otpExpiresAt = Date.now() + (5 * 60 * 1000);
+        resendAvailableAt = Date.now() + (30 * 1000);
+        showOtpModal();
+        document.getElementById('modalOtpHint').textContent = 'Sending OTP...';
+
+        // send email in background (do not block UI)
+        Promise.resolve().then(() => sendOtpEmail(pendingEmail, currentOTP))
+          .then(() => {
+            const hint = document.getElementById('modalOtpHint');
+            if (hint) hint.textContent = 'OTP sent — valid 5 minutes. Resend available in 30s.';
+          })
+          .catch(() => {
+            const hint = document.getElementById('modalOtpHint');
+            if (hint) hint.textContent = 'Could not send via EmailJS. OTP shown in alert (dev).';
+          });
+
+        localStorage.setItem('cs_role', pendingRole);
+        showLoginMessage('OTP modal opened. Check your email.', '#86efac');
+        document.getElementById('password').value = '';
+      } catch (err) {
+        showLoginMessage(err.message || 'Login failed');
+      }
+    };
+
+    window.resetPassword = async function resetPassword() {
+      const email = document.getElementById('email').value.trim();
+      if (!email) { showLoginMessage('Enter your email to reset password.'); return; }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showLoginMessage('Password reset email sent. Check your inbox.', '#86efac');
+      } catch (err) {
+        showLoginMessage(err.message || 'Reset failed');
+      }
+    };
+
+    window.signOut = async function signOut() {
+      try {
+        await fbSignOut(auth);
+        showPublicView();
+        clearCases();
+      } catch (err) { console.error('Sign out failed', err); }
+    };
+
+    // ---------------- OTP helpers ----------------
+    function generateOTP() { return Math.floor(100000 + Math.random() * 900000).toString(); }
+
+    async function sendOtpEmail(toEmail, otp) {
+      // EmailJS template expects variables: to_email, otp
+      if (!EMAILJS || !EMAILJS.send) {
+        console.warn('EmailJS not available — dev fallback');
+        alert('OTP (dev): ' + otp);
+        return;
+      }
+      try {
+        await EMAILJS.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, { to_email: toEmail, otp: otp });
+        console.log('OTP sent via EmailJS');
+      } catch (e) {
+        console.error('EmailJS send error', e);
+        alert('Failed to send OTP via EmailJS. OTP (dev): ' + otp);
+      }
+    }
+document.getElementById('modalVerifyBtn').addEventListener('click', () => {
+    const entered = (document.getElementById('otpModalInput').value || '').trim();
+    if (!entered) { 
+        document.getElementById('modalOtpHint').textContent = 'Enter the OTP.'; 
+        return; 
+    }
+    if (Date.now() > otpExpiresAt) { 
+        document.getElementById('modalOtpHint').textContent = 'OTP expired. Please resend.'; 
+        return; 
+    }
+    if (entered === currentOTP) {
+        // This line gets the role ('bank' or 'police') that was selected during login
+        const role = localStorage.getItem('cs_role') || pendingRole || 'bank';
+        
+        showLoginMessage('OTP verified — welcome!', '#86efac');
+        hideOtpModal(); 
+        currentOTP = null;
+        
+        // This logic sends the user to the correct place based on their role
+        if (role === 'police') {
+            showPage('police');
+        } else {
+            window.location.href = 'https://fraud-detection-dashboard.web.app';
+        }
+
+    } else { 
+        document.getElementById('modalOtpHint').textContent = 'Incorrect OTP. Try again or resend.'; 
+    }
+});    document.getElementById('modalResendBtn').addEventListener('click', async () => {
+      if (!pendingEmail) { document.getElementById('modalOtpHint').textContent = 'No pending login — please login first.'; return; }
+      if (Date.now() < resendAvailableAt) { const sec = Math.ceil((resendAvailableAt - Date.now()) / 1000); document.getElementById('modalOtpHint').textContent = `Wait ${sec}s before resending.`; return; }
+      currentOTP = generateOTP(); otpExpiresAt = Date.now() + (5 * 60 * 1000); resendAvailableAt = Date.now() + (30 * 1000);
+      document.getElementById('modalOtpHint').textContent = 'Sending new OTP...';
+      try { await sendOtpEmail(pendingEmail, currentOTP); document.getElementById('modalOtpHint').textContent = 'OTP resent — valid 5 minutes.'; showLoginMessage('OTP resent. Check your email.', '#86efac'); }
+      catch { document.getElementById('modalOtpHint').textContent = 'Couldn’t send via EmailJS. (Dev) OTP in alert.'; }
+    });
+
+    // ---------------- Public View routing ----------------
+    function showPublicView() {
+      const publicIds = ['landing','usp','advantage','cta'];
+      const appIds = ['login','bank-dashboard','police'];
+      document.querySelectorAll('section, div[id$="-dashboard"]').forEach(s => s.classList.add('hidden'));
+      publicIds.forEach(id => document.getElementById(id)?.classList.remove('hidden'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.showPage = function showPage(id) {
+      if (id === 'landing') { showPublicView(); return; }
+      document.querySelectorAll('section, div[id$="-dashboard"]').forEach(s => s.classList.add('hidden'));
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // if opening bank dashboard, ensure data & charts refresh
+      if (id === 'bank-dashboard') renderBankView('dashboard');
+    };
+
+    // navbar home actions
+    document.getElementById('homeBrand')?.addEventListener('click', (e) => { e.preventDefault(); showPublicView(); });
+    document.getElementById('homeBtn')?.addEventListener('click', () => showPublicView());
+    document.getElementById('homeBtnMobile')?.addEventListener('click', () => showPublicView());
+
+    document.querySelectorAll('.public-link').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const hiddenLanding = document.getElementById('landing')?.classList.contains('hidden');
+        if (hiddenLanding) {
+          e.preventDefault();
+          const target = a.getAttribute('data-target') || '#landing';
+          showPublicView();
+          setTimeout(() => { const el = document.querySelector(target); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+        }
+      });
+    });
+
+    // ----------- Demo Data & Bank functions -----------
+    // More complete demo transaction objects for bank dashboard
+    const sampleTransactions = [
+      { id: "TXN1001", amount: 45000, location: "Delhi, IN", time: "2025-08-28T10:23:00Z", device: "Android Phone", ip: "203.0.113.12", channel: "UPI", risk: 92, lat:28.7041, lon:77.1025 },
+      { id: "TXN1002", amount: 1200, location: "Mumbai, IN", time: "2025-08-28T11:10:00Z", device: "iOS Phone", ip: "203.0.113.21", channel: "CARD", risk: 35, lat:19.0760, lon:72.8777 },
+      { id: "TXN1003", amount: 78000, location: "Kolkata, IN", time: "2025-08-28T13:45:00Z", device: "Windows PC", ip: "198.51.100.34", channel: "NETBANKING", risk: 88, lat:22.5726, lon:88.3639 },
+      { id: "TXN1004", amount: 5000, location: "Lucknow, IN", time: "2025-08-28T15:20:00Z", device: "ATM", ip: "198.51.100.78", channel: "ATM", risk: 60, lat:26.8467, lon:80.9462 },
+      { id: "TXN1005", amount: 250000, location: "Bengaluru, IN", time: "2025-08-28T16:15:00Z", device: "Android Phone", ip: "203.0.113.99", channel: "UPI", risk: 96, lat:12.9716, lon:77.5946 },
+      // add more for trend chart
+      { id: "TXN1006", amount: 300, location: "Pune, IN", time: "2025-08-28T09:05:00Z", device: "iOS Phone", ip: "203.0.113.44", channel: "CARD", risk: 12, lat:18.5204, lon:73.8567 },
+      { id: "TXN1007", amount: 15000, location: "Chennai, IN", time: "2025-08-28T14:00:00Z", device: "Android Phone", ip: "203.0.113.60", channel: "NETBANKING", risk: 48, lat:13.0827, lon:80.2707 },
+    ];
+
+    // live arrays
+    let transactions = [...sampleTransactions]; // in-memory demo dataset
+    let policeCases = []; // collected or flagged cases
+
+    // KPI & rendering utilities
+    function calcKPIs(list) {
+      const total = list.length;
+      const avg = total ? Math.round(list.reduce((s, t) => s + t.amount, 0) / total) : 0;
+      const high = list.filter(t => t.risk >= 80).length;
+      const alerts = policeCases.length;
+      return { total, avg, high, alerts };
+    }
+
+    function renderKPIs() {
+      const { total, avg, high, alerts } = calcKPIs(transactions);
+      document.getElementById('kpi-total').textContent = total;
+      document.getElementById('kpi-avg').textContent = '₹' + avg.toLocaleString('en-IN');
+      document.getElementById('kpi-highrisk').textContent = high;
+      document.getElementById('kpi-alerts').textContent = alerts;
+    }
+
+    // Render transactions table with filters
+    function renderTransactionsTable(filtered) {
+      const tbody = document.getElementById('bank-transactions');
+      tbody.innerHTML = '';
+      filtered.forEach(txn => {
+        const riskClass = txn.risk >= 80 ? 'text-red-400 font-bold' : txn.risk >= 50 ? 'text-yellow-400 font-semibold' : 'text-green-400';
+        const timeLocal = new Date(txn.time).toLocaleString();
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="border-b hover:bg-white/2">
+            <td class="px-4 py-2">${txn.id}</td>
+            <td class="px-4 py-2">₹${txn.amount.toLocaleString('en-IN')}</td>
+            <td class="px-4 py-2">${txn.location}</td>
+            <td class="px-4 py-2">${timeLocal}</td>
+            <td class="px-4 py-2 text-sm">${txn.device} • ${txn.ip}</td>
+            <td class="px-4 py-2">${txn.channel}</td>
+            <td class="px-4 py-2"><span class="risk-pill ${riskClass}">${txn.risk}%</span></td>
+            <td class="px-4 py-2">
+              <button onclick="flagTransaction('${txn.id}')" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg mr-2">Flag</button>
+              <button onclick="markSafe('${txn.id}')" class="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1 rounded-lg">Mark Safe</button>
+            </td>
+          </tr>
+        `);
+      });
+    }
+
+    function applyFiltersAndRender() {
+      const search = (document.getElementById('filterSearch').value || '').toLowerCase();
+      const risk = document.getElementById('filterRisk').value;
+      const channel = document.getElementById('filterChannel').value;
+      const date = document.getElementById('filterDate').value;
+
+      let filtered = transactions.slice();
+      if (search) filtered = filtered.filter(t => (t.id + ' ' + t.ip + ' ' + t.device + ' ' + t.location).toLowerCase().includes(search));
+      if (risk !== 'all') {
+        if (risk === 'high') filtered = filtered.filter(t => t.risk >= 80);
+        if (risk === 'medium') filtered = filtered.filter(t => t.risk >= 50 && t.risk < 80);
+        if (risk === 'low') filtered = filtered.filter(t => t.risk < 50);
+      }
+      if (channel !== 'all') filtered = filtered.filter(t => t.channel === channel);
+      if (date) filtered = filtered.filter(t => new Date(t.time).toISOString().slice(0,10) === date);
+
+      renderKPIs();
+      renderTransactionsTable(filtered);
+      updateCharts(filtered);
+    }
+
+    // flag transaction => add to police cases
+    function flagTransaction(txnId) {
+      const tx = transactions.find(t => t.id === txnId);
+      if (!tx) return alert('Transaction not found');
+      policeCases.unshift({ ...tx, status: 'Open', policeNotes: '', assignedOfficer: '' });
+      renderCaseTable();
+      renderKPIs();
+      showLoginMessage(`Transaction ${txnId} flagged and moved to Police case queue.`, '#86efac');
+    }
+
+    function markSafe(txnId) {
+      const idx = transactions.findIndex(t => t.id === txnId);
+      if (idx === -1) return;
+      // For demo: lower risk and update UI
+      transactions[idx].risk = 0;
+      applyFiltersAndRender();
+      showLoginMessage(`Transaction ${txnId} marked safe.`, '#86efac');
+    }
+
+    // Export visible CSV of transactions
+    function exportVisibleCSV() {
+      // Build CSV from currently visible table (apply filters again)
+      const rows = [];
+      const headers = ['id','amount','location','time','device','ip','channel','risk'];
+      rows.push(headers.join(','));
+      const search = (document.getElementById('filterSearch').value || '').toLowerCase();
+      const risk = document.getElementById('filterRisk').value;
+      const channel = document.getElementById('filterChannel').value;
+      const date = document.getElementById('filterDate').value;
+      let filtered = transactions.slice();
+      if (search) filtered = filtered.filter(t => (t.id + ' ' + t.ip + ' ' + t.device + ' ' + t.location).toLowerCase().includes(search));
+      if (risk !== 'all') {
+        if (risk === 'high') filtered = filtered.filter(t => t.risk >= 80);
+        if (risk === 'medium') filtered = filtered.filter(t => t.risk >= 50 && t.risk < 80);
+        if (risk === 'low') filtered = filtered.filter(t => t.risk < 50);
+      }
+      if (channel !== 'all') filtered = filtered.filter(t => t.channel === channel);
+      if (date) filtered = filtered.filter(t => new Date(t.time).toISOString().slice(0,10) === date);
+
+      filtered.forEach(t => rows.push([t.id,t.amount,t.location,new Date(t.time).toLocaleString(),t.device,t.ip,t.channel,t.risk].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')));
+      const csv = rows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'fraudlens_transactions.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ---------------- Police queue functions ----------------
+    function renderCaseTable() {
+      const tbody = document.getElementById('caseTable');
+      tbody.innerHTML = '';
+      policeCases.forEach((c, i) => {
+        const riskClass = c.risk >= 80 ? 'text-red-600' : c.risk >= 50 ? 'text-yellow-600' : 'text-green-600';
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="border-b">
+            <td class="px-3 py-2">${c.id}</td>
+            <td class="px-3 py-2">₹${c.amount.toLocaleString('en-IN')}</td>
+            <td class="px-3 py-2">${c.location}</td>
+            <td class="px-3 py-2 ${riskClass}">${c.risk}%</td>
+            <td class="px-3 py-2">${c.status}</td>
+            <td class="px-3 py-2">
+              <button onclick="openCaseDetails(${i})" class="bg-blue-500 px-2 py-1 rounded">View</button>
+            </td>
+          </tr>
+        `);
+      });
+    }
+
+    function openCaseDetails(index) {
+      const caseItem = policeCases[index];
+      if (!caseItem) return;
+      document.getElementById('caseDetailsEmpty').classList.add('hidden');
+      const details = document.getElementById('caseDetails');
+      details.classList.remove('hidden');
+      document.getElementById('caseInfo').innerHTML = `
+        <strong>ID:</strong> ${caseItem.id}<br/>
+        <strong>Amount:</strong> ₹${caseItem.amount.toLocaleString('en-IN')}<br/>
+        <strong>Location:</strong> ${caseItem.location}<br/>
+        <strong>Time:</strong> ${new Date(caseItem.time).toLocaleString()}<br/>
+        <strong>Device/IP:</strong> ${caseItem.device} • ${caseItem.ip}<br/>
+        <strong>Channel:</strong> ${caseItem.channel}<br/>
+        <strong>Risk:</strong> ${caseItem.risk}%
+      `;
+      document.getElementById('assignOfficer').value = caseItem.assignedOfficer || 'Officer R. Singh';
+      document.getElementById('caseNotes').value = caseItem.policeNotes || '';
+      // store current index for save
+      details.dataset.index = index;
+    }
+
+    function saveCaseNotes() {
+      const details = document.getElementById('caseDetails');
+      const index = Number(details.dataset.index);
+      const notes = document.getElementById('caseNotes').value;
+      const officer = document.getElementById('assignOfficer').value;
+      policeCases[index].policeNotes = notes;
+      policeCases[index].assignedOfficer = officer;
+      policeCases[index].status = 'Assigned';
+      renderCaseTable();
+      showLoginMessage('Case updated and assigned.', '#86efac');
+      closeCaseDetails();
+    }
+    function closeCaseDetails() {
+      document.getElementById('caseDetails').classList.add('hidden');
+      document.getElementById('caseDetailsEmpty').classList.remove('hidden');
+    }
+
+    function clearCases() {
+      policeCases = [];
+      renderCaseTable();
+    }
+
+    function exportCasesCSV() {
+      if (!policeCases.length) return alert('No cases to export');
+      const headers = ['id','amount','location','time','device','ip','channel','risk','status','assignedOfficer','notes'];
+      const rows = [headers.join(',')];
+      policeCases.forEach(c => rows.push([c.id,c.amount,c.location,new Date(c.time).toLocaleString(),c.device,c.ip,c.channel,c.risk,c.status,c.assignedOfficer || '',(c.policeNotes||'').replace(/\n/g,' ')]
+        .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')));
+      const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'police_cases.csv'; a.click(); URL.revokeObjectURL(url);
+    }
+
+    // Notify Police button on bank side (send flagged cases)
+    document.getElementById('btnNotifyPolice').addEventListener('click', () => {
+      if (!policeCases.length) return alert('No flagged cases to notify');
+      // For demo: open police dashboard and show cases
+      showPage('police');
+      renderCaseTable();
+      showLoginMessage('Police notified (demo). Cases visible in Police Dashboard.', '#86efac');
+    });
+
+    // Export buttons
+    document.getElementById('exportCSV2').addEventListener('click', exportVisibleCSV);
+    document.getElementById('btnExportCSV')?.addEventListener('click', exportVisibleCSV);
+
+    // bulk safe button (demo stub)
+    document.getElementById('bulkSafeBtn').addEventListener('click', () => {
+      // mark all visible as safe
+      const search = (document.getElementById('filterSearch').value || '').toLowerCase();
+      transactions.forEach(t => { if (t.id.toLowerCase().includes(search)) t.risk = 0; });
+      applyFiltersAndRender();
+      showLoginMessage('Visible transactions marked safe (demo).', '#86efac');
+    });
+
+    // Apply filters button
+    document.getElementById('applyFiltersBtn').addEventListener('click', applyFiltersAndRender);
+
+    // initial charts setup
+    let riskChart = null, trendChart = null;
+    function initCharts() {
+      const rCtx = document.getElementById('riskChart').getContext('2d');
+      const tCtx = document.getElementById('trendChart').getContext('2d');
+      if (riskChart) riskChart.destroy();
+      if (trendChart) trendChart.destroy();
+
+      riskChart = new Chart(rCtx, {
+        type: 'pie',
+        data: {
+          labels: ['High (>=80)','Medium (50-79)','Low (<50)'],
+          datasets: [{
+            data: [0,0,0],
+            backgroundColor: ['#ef4444','#f59e0b','#10b981']
+          }]
+        },
+        options: { plugins:{ legend:{ labels:{ color:'#e5e7eb' } } } }
+      });
+
+      trendChart = new Chart(tCtx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label:'Txn Volume', data: [], fill:false, tension:0.3 }] },
+        options: {
+          plugins:{ legend:{ labels:{ color:'#e5e7eb' } } },
+          scales: {
+            x: { ticks:{ color:'#cbd5e1' } },
+            y: { ticks:{ color:'#cbd5e1' } }
+          }
+        }
+      });
+    }
+
+    function updateCharts(filtered) {
+      // risk distribution
+      const high = filtered.filter(t => t.risk >= 80).length;
+      const med = filtered.filter(t => t.risk >= 50 && t.risk < 80).length;
+      const low = filtered.filter(t => t.risk < 50).length;
+      if (riskChart) { riskChart.data.datasets[0].data = [high, med, low]; riskChart.update(); }
+
+      // simple trend: group by hour for demo
+      const buckets = {};
+      filtered.forEach(t => {
+        const hour = new Date(t.time).toLocaleString();
+        buckets[hour] = (buckets[hour] || 0) + 1;
+      });
+      const labels = Object.keys(buckets).slice(-12);
+      const data = labels.map(k => buckets[k]);
+      if (trendChart) { trendChart.data.labels = labels; trendChart.data.datasets[0].data = data; trendChart.update(); }
+    }
+
+    // render bank view helper
+    function renderBankView(sub) {
+      // show bank dashboard
+      showPage('bank-dashboard');
+      // compute KPIs and render table & charts
+      renderKPIs();
+      applyFiltersAndRender();
+      if (!riskChart || !trendChart) initCharts();
+    }
+
+    // ----------------- Police notify from bank (mock) -----------------
+    // When a transaction is flagged we already push into policeCases.
+    // This button opens police dashboard (above) to view and act.
+
+    // ----------------- Initial load -----------------
+    document.addEventListener('DOMContentLoaded', () => {
+      // Show public landing initially
+      showPublicView();
+      // add a slight delay to animate AOS
+      AOS.init({ duration: 900, once: true });
+
+      // initial rendering (no filtering)
+      renderKPIs();
+      initCharts(); updateCharts(transactions);
+
+      // ensure sample txs appear in bank table when bank opened
+      // but don't auto-show bank
+      document.getElementById('homeBrand')?.addEventListener('click', e => { e.preventDefault(); showPublicView(); });
+
+      // For demo: make sure bank table updates when bank dashboard becomes visible
+      // We'll also refresh KPIs when user navigates to bank-dashboard via showPage
+    });
+
+    // ------------- Model scoring (kept for local scoring) -------------
+    // Optionally integrate ML scoring function with transaction input forms (if arises)
+    // (Kept for completeness in your app)
+    let MODEL = null;
+    async function loadModel() {
+      if (MODEL) return MODEL;
+      try {
+        const res = await fetch('fraud_model.json', { cache:'no-store' });
+        if (!res.ok) throw new Error('model not found');
+        MODEL = await res.json();
+        return MODEL;
+      } catch (e) {
+        MODEL = {
+          feature_order: ["amount","oldbalanceOrg","newbalanceOrig","oldbalanceDest","newbalanceDest","deltaOrig","deltaDest","ratioAmtToOrigBal","ratioAmtToDestBal","isLarge","type_TRANSFER","type_PAYMENT","type_CASH_OUT","type_CASH_IN"],
+          coefficients: [0.012,-0.01,0.015,0.02,-0.008,0.03,-0.02,0.018,-0.015,0.45,0.08,-0.06,0.12,-0.1],
+          bias: -1.0,
+          scaler_mean: [10000, 5000, 6000, 7000, 8000, 0, 0, 0.1, 0.1],
+          scaler_scale: [2000, 1000, 1200, 1500, 1700, 1, 1, 0.05, 0.05],
+          threshold: 0.35
+        };
+        return MODEL;
+      }
+    }
+    function sigmoid(z) { return 1/(1+Math.exp(-z)); }
+    function scoreTransaction(tx, model) {
+      let z = model.bias || 0;
+      model.feature_order.forEach((feat,i) => {
+        let val = Number(tx[feat] ?? 0);
+        if (i < (model.scaler_mean?.length || 0)) {
+          const mean = model.scaler_mean[i] || 0; const scale = model.scaler_scale[i] || 1; val = (val-mean)/(scale||1);
+        }
+        z += (model.coefficients[i]||0)*val;
+      });
+      const risk = sigmoid(z); return { risk, flag: risk >= (model.threshold ?? 0.5) ? "⚠️ Suspicious" : "✅ Safe" };
+    }
+
+    // ---------------- Troubleshooting notes (displayed in console) ----------------
+    console.log("If OTP emails don't arrive: check EmailJS service/template settings, allowed origins (CORS) in EmailJS, and Gmail SMTP 'Allow less secure apps' or App Passwords if using Gmail. For production, route OTP sending through a server-side API to avoid exposing keys.");
+
+    // Expose a few helpers to the window for debugging in console
+    window._transactions = transactions;
+    window._policeCases = policeCases;
+    window.flagTransaction = flagTransaction;
+    window.markSafe = markSafe;
+    window.exportVisibleCSV = exportVisibleCSV;
+    window.renderBankView = renderBankView;
+  </script>
+  <!-- =================== Advanced FraudLens AI Chatbot =================== -->
+<!-- =================== Advanced FraudLens AI Chatbot =================== -->
+<div id="chatWidgetPro" class="fixed bottom-5 right-5 w-80 max-w-full bg-gray-900 text-white rounded-xl shadow-lg overflow-hidden z-50 transition-all">
+  <div id="chatHeaderPro" class="bg-blue-600 p-3 cursor-pointer font-bold flex justify-between items-center">
+    <span>💬 FraudLens AI Assistant</span>
+    <span id="chatTogglePro" class="text-white text-lg">▼</span>
+  </div>
+
+  <div id="chatBodyContainerPro" class="hidden flex flex-col h-96 overflow-y-auto p-3 gap-2 bg-gray-800">
+    <!-- Chat messages appear here -->
+  </div>
+
+  <div id="chatInputContainerPro" class="hidden p-3 border-t border-gray-700 flex gap-2 bg-gray-800">
+    <input id="chatInputPro" type="text" placeholder="Ask me about transactions or cases..." class="flex-1 p-2 rounded bg-gray-700 text-white focus:outline-none">
+    <button id="chatSendBtnPro" class="bg-green-600 p-2 rounded hover:bg-green-700">Send</button>
+  </div>
+
+  <div id="chatQuickActionsPro" class="hidden p-2 border-t border-gray-700 flex gap-2 bg-gray-800 flex-wrap">
+    <button class="quick-btn-pro bg-blue-500 px-2 py-1 rounded hover:bg-blue-600 text-xs">High-risk transactions</button>
+    <button class="quick-btn-pro bg-blue-500 px-2 py-1 rounded hover:bg-blue-600 text-xs">Hotspot cases</button>
+    <button class="quick-btn-pro bg-blue-500 px-2 py-1 rounded hover:bg-blue-600 text-xs">Dashboard summary</button>
+  </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const chatHeader = document.getElementById("chatHeaderPro");
+  const chatBody = document.getElementById("chatBodyContainerPro");
+  const chatInputContainer = document.getElementById("chatInputContainerPro");
+  const chatInput = document.getElementById("chatInputPro");
+  const chatSendBtn = document.getElementById("chatSendBtnPro");
+  const quickActions = document.querySelectorAll(".quick-btn-pro");
+  const toggle = document.getElementById("chatTogglePro");
+
+  // Toggle chat open/close
+  chatHeader.addEventListener("click", () => {
+    const isOpen = !chatBody.classList.contains("hidden");
+    chatBody.classList.toggle("hidden");
+    chatInputContainer.classList.toggle("hidden");
+    document.getElementById("chatQuickActionsPro").classList.toggle("hidden");
+    toggle.innerText = isOpen ? "▼" : "▲";
+  });
+
+  // Quick buttons
+  quickActions.forEach(btn => btn.addEventListener("click", () => sendChat(btn.innerText)));
+
+  // Send message
+  chatSendBtn.addEventListener("click", () => sendChat(chatInput.value));
+  chatInput.addEventListener("keypress", e => { if(e.key==="Enter") sendChat(chatInput.value); });
+
+  function appendMessage(text, sender="ai") {
+    const msg = document.createElement("div");
+    msg.className = `max-w-[75%] p-2 rounded break-words ${sender==="user"?"self-end bg-blue-500":"self-start bg-gray-700"}`;
+    msg.innerHTML = text;
+    chatBody.appendChild(msg);
+    chatBody.scrollTop = chatBody.scrollHeight;
+  }
+
+  async function sendChat(text) {
+    text = text.trim();
+    if(!text) return;
+    appendMessage(text, "user");
+    chatInput.value = "";
+
+    // Typing indicator
+    const typing = document.createElement("div");
+    typing.className = "self-start bg-gray-700 p-2 rounded animate-pulse max-w-[30%]";
+    typing.innerText = "🤖 Typing...";
+    chatBody.appendChild(typing);
+    chatBody.scrollTop = chatBody.scrollHeight;
+
+    // Simulate AI response
+    const reply = await getAIResponse(text);
+
+    typing.remove();
+    appendMessage(reply, "ai");
+  }
+
+  async function getAIResponse(text) {
+    text = text.toLowerCase();
+    if(text.includes("high-risk transaction")) {
+      const risky = window.exampleTransactions?.filter(tx => tx.status.includes("Suspicious")) || [];
+      return risky.length ? risky.map(tx=>`${tx.id} - ₹${tx.amount} (${tx.details.reason})`).join("<br>") : "No high-risk transactions currently.";
+    }
+    if(text.includes("hotspot") || text.includes("high-risk case")) {
+      const highCases = window.policeCases?.filter(c => c.risk==="High") || [];
+      return highCases.length ? highCases.map(c=>`${c.id} - ${c.location} (${c.status})`).join("<br>") : "No high-risk cases now.";
+    }
+    if(text.includes("dashboard summary")) {
+      const total = window.exampleTransactions?.length || 0;
+      const high = window.exampleTransactions?.filter(tx => tx.status.includes("Suspicious")).length || 0;
+      return `Dashboard Summary: Total TXNs: ${total}, High-risk: ${high}`;
+    }
+
+    return "Ask me about high-risk transactions, hotspots, or dashboard summary!";
+  }
+});
+</script>
+
+<style>
+#chatWidgetPro { font-family: 'Arial', sans-serif; transition: all 0.3s ease; }
+#chatWidgetPro .animate-pulse {
+  animation: pulse 1s infinite;
+}
+@keyframes pulse {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+</style>
+
+
+</body>
+</html>
